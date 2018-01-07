@@ -44,7 +44,8 @@ public class TodoListAdapter extends BaseAdapter {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-
+        // only if convertView is null, we create a view;
+        // otherwise, we just re-use ViewHolder vh every time.
         ViewHolder vh;
 
         if (convertView == null) {
