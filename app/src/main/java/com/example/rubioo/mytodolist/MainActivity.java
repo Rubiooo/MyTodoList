@@ -6,6 +6,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import com.example.rubioo.mytodolist.models.Todo;
@@ -34,15 +35,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupUI(List<Todo> todos) {
-        LinearLayout linearLayout = (LinearLayout) findViewById(R.id.crappy_list);
-        linearLayout.removeAllViews();
+        ListView listView = (ListView) findViewById(R.id.main_list_view);
+        listView.setAdapter(new TodoListAdapter(this, todos));
 
-        TodoListConverter converter = new TodoListConverter(this, todos);
-
-        for (int i = 0; i < todos.size(); ++i) {
-            View view = converter.getView(i);
-            linearLayout.addView(view);
-        }
     }
 
     @NonNull
