@@ -59,6 +59,7 @@ public class TodoListAdapter extends BaseAdapter {
         } else {
             // convertView is not null, which means it holds a cached view holder.
             vh = (ViewHolder) convertView.getTag();
+
         }
 
 
