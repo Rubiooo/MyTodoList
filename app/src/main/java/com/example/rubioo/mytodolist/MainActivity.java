@@ -38,23 +38,18 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        setupUI(mockData());
+        setupFragment();
 
     }
 
 
-    private void setupUI(@NonNull List<Todo> todos) {
-        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.main_recycler_view);
-        recyclerView.setLayoutManager(new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL));
-        recyclerView.setAdapter(new TodoListAdapter(todos));
+    private void setupFragment() {
+        TodoListFragment todoListFragment = new TodoListFragment();
+        getSupportFragmentManager()
+                .beginTransaction()
+                .add(R.id.fragment_container, todoListFragment)
+                .commit();
     }
 
-    @NonNull
-    private List<Todo> mockData() {
-        List<Todo> list = new ArrayList<>();
-        for (int i = 0; i < 1000; ++i) {
-            list.add(new Todo("todo" + i, DateUtils.stringToDate("2015 7 29 0:00")));
-        }
-        return list;
-    }
+
 }
