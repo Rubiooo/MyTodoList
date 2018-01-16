@@ -3,7 +3,9 @@ package com.example.rubioo.mytodolist;
 import android.app.Activity;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
+import android.app.NotificationManager;
 import android.app.TimePickerDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -15,19 +17,24 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.TimePicker;
 
 import com.example.rubioo.mytodolist.models.Todo;
+import com.example.rubioo.mytodolist.utils.AlarmUtils;
 import com.example.rubioo.mytodolist.utils.DateUtils;
 import com.example.rubioo.mytodolist.utils.UIUtils;
+
+import org.w3c.dom.Text;
 
 import java.util.Calendar;
 import java.util.Date;
 
 /**
- * Created by Jimmy on 2018/1/8.
+ * Created by Jimmy on 2018/1/14.
  */
+
 @SuppressWarnings("ConstantConditions")
 public class TodoEditActivity extends AppCompatActivity implements
         DatePickerDialog.OnDateSetListener,
@@ -35,6 +42,7 @@ public class TodoEditActivity extends AppCompatActivity implements
 
     public static final String KEY_TODO = "todo";
     public static final String KEY_TODO_ID = "todo_id";
+    public static final String KEY_NOTIFICATION_ID = "notification_id";
 
     private EditText todoEdit;
     private TextView dateTv;
@@ -46,15 +54,15 @@ public class TodoEditActivity extends AppCompatActivity implements
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
         super.onCreate(savedInstanceState);
 
         todo = getIntent().getParcelableExtra(KEY_TODO);
         remindDate = todo != null
                 ? todo.remindDate
-                : null; // if this activity is for create a new todo_item, set remindDate to null
+                : null; // if this activity is for creating a new todo_item, set remindDate to null
 
         setupUI();
+        cancelNotificationIfNeeded();
     }
 
     @Override
@@ -66,17 +74,17 @@ public class TodoEditActivity extends AppCompatActivity implements
         return super.onOptionsItemSelected(item);
     }
 
-    private void setupActionbar() {
+    private void setupActionBar() {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setElevation(0);
         setTitle(null);
     }
 
     private void setupUI() {
-        setContentView(R.layout.activity_edit_doto);
-        setupActionbar();
+        setContentView(R.layout.activity_edit_todo);
+        setupActionBar();
 
-        todoEdit = (EditText) findViewById(R.id.toto_detail_todo_edit);
+        todoEdit = (EditText) findViewById(R.id.toto_details_todo_edit);
         dateTv = (TextView) findViewById(R.id.todo_detail_date);
         timeTv = (TextView) findViewById(R.id.todo_detail_time);
         completeCb = (CheckBox) findViewById(R.id.todo_detail_complete);
@@ -87,6 +95,7 @@ public class TodoEditActivity extends AppCompatActivity implements
             completeCb.setChecked(todo.done);
 
             findViewById(R.id.todo_delete).setOnClickListener(new View.OnClickListener() {
+
                 @Override
                 public void onClick(View view) {
                     delete();
@@ -100,18 +109,18 @@ public class TodoEditActivity extends AppCompatActivity implements
             dateTv.setText(DateUtils.dateToStringDate(remindDate));
             timeTv.setText(DateUtils.dateToStringTime(remindDate));
         } else {
-            dateTv.setText("Set date");
-            timeTv.setText("Set time");
+            dateTv.setText(R.string.set_date);
+            timeTv.setText(R.string.set_time);
         }
 
         setupDatePicker();
         setupCheckbox();
         setupSaveButton();
-
     }
 
     private void setupDatePicker() {
         dateTv.setOnClickListener(new View.OnClickListener() {
+
             @Override
             public void onClick(View view) {
                 Calendar c = getCalendarFromRemindDate();
@@ -126,6 +135,7 @@ public class TodoEditActivity extends AppCompatActivity implements
         });
 
         timeTv.setOnClickListener(new View.OnClickListener() {
+
             @Override
             public void onClick(View view) {
                 Calendar c = getCalendarFromRemindDate();
@@ -140,20 +150,28 @@ public class TodoEditActivity extends AppCompatActivity implements
         });
     }
 
+    private void cancelNotificationIfNeeded() {
+        //if no value bundle with the key, set defaultValue -1, or anything else
+        int notificationId = getIntent().getIntExtra(KEY_NOTIFICATION_ID, -1);
+        if (notificationId != -1) {
+            ((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE)).cancel(notificationId);
+        }
+
+    }
+
     private void setupCheckbox() {
         completeCb.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 UIUtils.setTextViewStrikeThrough(todoEdit, isChecked);
-                todoEdit.setTextColor(isChecked ? Color.GRAY : Color.WHITE);
+                todoEdit.setTextColor(isChecked? Color.GRAY : Color.WHITE);
             }
         });
-
-
         // use this wrapper to make it possible for users to click on the entire row
         // to change the check box
-        View completeWrapper = findViewById(R.id.todo_detail_complete_wrapper);
+        final View completeWrapper = findViewById(R.id.todo_detail_complete_wrapper);
         completeWrapper.setOnClickListener(new View.OnClickListener() {
+
             @Override
             public void onClick(View view) {
                 completeCb.setChecked(!completeCb.isChecked());
@@ -162,34 +180,15 @@ public class TodoEditActivity extends AppCompatActivity implements
     }
 
     private void setupSaveButton() {
+        // this fab is the check mark on the UI act as a save button
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.todo_detail_done);
         fab.setOnClickListener(new View.OnClickListener() {
+
             @Override
             public void onClick(View view) {
                 saveAndExit();
             }
         });
-    }
-
-    @Override
-    public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
-        // this method will be called after user has chosen date from the DatePickerDialog
-        Calendar c = getCalendarFromRemindDate();
-        c.set(year, monthOfYear, dayOfMonth);
-
-        remindDate = c.getTime();
-        dateTv.setText(DateUtils.dateToStringDate(remindDate));
-    }
-
-    @Override
-    public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
-        // this method will be called after user has chosen time from the TimePickerDialog
-        Calendar c = getCalendarFromRemindDate();
-        c.set(Calendar.HOUR_OF_DAY, hourOfDay);
-        c.set(Calendar.MINUTE, minute);
-
-        remindDate = c.getTime();
-        timeTv.setText(DateUtils.dateToStringTime(remindDate));
     }
 
     private void saveAndExit() {
@@ -201,6 +200,10 @@ public class TodoEditActivity extends AppCompatActivity implements
         }
 
         todo.done = completeCb.isChecked();
+
+        if (todo.remindDate != null) {
+            AlarmUtils.setAlarm(this, todo);
+        }
 
         Intent result = new Intent();
         result.putExtra(KEY_TODO, todo);
@@ -215,12 +218,41 @@ public class TodoEditActivity extends AppCompatActivity implements
         finish();
     }
 
-    private Calendar getCalendarFromRemindDate() {
+    private Calendar getCalendarFromRemindDate(){
         Calendar c = Calendar.getInstance();
         if (remindDate != null) {
             c.setTime(remindDate);
         }
-
         return c;
     }
+
+    @Override
+    public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
+        // this method will be called after user has chosen date from the DatePickerDialog
+        Calendar c = getCalendarFromRemindDate();
+        c.set(year, monthOfYear, dayOfMonth);
+        //c.set(Calendar.YEAR, year);
+        //c.set(Calendar.MONTH, monthOfYear);
+        //c.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+
+        remindDate = c.getTime();
+        dateTv.setText(DateUtils.dateToStringDate(remindDate));
+    }
+
+    @Override
+    public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+        // this method will be called after user has chosen time from th TimePickerDialog
+        Calendar c = getCalendarFromRemindDate();
+        //c.set(hourOfDay, minute);
+        c.set(Calendar.HOUR_OF_DAY, hourOfDay);
+        c.set(Calendar.MINUTE, minute);
+
+        remindDate = c.getTime();
+        timeTv.setText(DateUtils.dateToStringTime(remindDate));
+    }
+
+//    @Override
+//    public void onPointerCaptureChanged(boolean hasCapture) {
+//
+//    } this is for app to catch mouse pointer - for android to run on pc or mac
 }
